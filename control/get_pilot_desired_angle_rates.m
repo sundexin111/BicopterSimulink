@@ -1,9 +1,10 @@
 function [target_roll_rate,target_pitch_rate,target_yaw_rate] = get_pilot_desired_angle_rates(roll_in,pitch_in,yaw_in)
 %UNTITLED 此处显示有关此函数的摘要
 %   此处显示详细说明
-ROLL_PITCH_YAW_INPUT_MAX = 4500;
-acro_rp_expo = 0.3;
-acro_rp_p = 4.5;
+global ROLL_PITCH_YAW_INPUT_MAX acro_rp_expo acro_rp_p
+% ROLL_PITCH_YAW_INPUT_MAX = 4500;
+% acro_rp_expo = 0.3;
+% acro_rp_p = 4.5;
 
 %total_in = norm(roll_in,pitch_in);
 total_in = sqrt(roll_in * roll_in + pitch_in * pitch_in);

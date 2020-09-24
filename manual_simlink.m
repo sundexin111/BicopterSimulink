@@ -1,5 +1,5 @@
 clear;clc;
-
+init_bicopter;
 %发送数据
 global servos
 servos=1000*ones(12,1);
@@ -80,7 +80,7 @@ controller_started=0;
     %     servos(4,1)=servos(4,1)+5;
 
    %% 从realflight获得四个通道的输入
-    global servos
+    global servos q
     state         = exchange_data(servos);
     pwm_roll      = rfsig_to_pwm(state(1));
     pwm_pitch     = rfsig_to_pwm(state(2));
@@ -92,19 +92,31 @@ controller_started=0;
     angle_pitch    = pwm_to_angle(pwm_pitch);
     angle_yaw      = pwm_to_angle(pwm_yaw);
     range_throttle = pwm_to_range(pwm_throttle);
-    %% 角速率控制
-    [desired_rollrate,desired_pitchrate,desired_yawrate] = get_pilot_desired_angle_rates(angle_roll,angle_pitch,angle_yaw);
+    %% arco模式控制
+    [rollrate_stick,pitchrate_stick,yawrate_stick] = get_pilot_desired_angle_rates(angle_roll,angle_pitch,angle_yaw);
     %将角速率标准化，单位是（rad/s）
-    desired_rollrate_rad = qianfendeg_to_rad(desired_rollrate);
-    desired_pitchrate_rad = qianfendeg_to_rad(desired_pitchrate);
-    desired_yawrate_rad = qianfendeg_to_rad(desired_yawrate);
-    desired_throttle  = get_pilot_desired_throttle(range_throttle);
+%     rollrate_stick_deg  = radians(rollrate_stick);
+%     pitchrate_stick_deg = radians(pitchrate_stick);
+%     yawrate_stick_deg   = radians(yawrate_stick);
+    desired_throttle    = get_pilot_desired_throttle(range_throttle);
     
+    %单位（°）
+    actual_roll      = state(18);
+    actual_pitch     = state(17);
+    actual_yaw       = state(16);
     actual_rollrate  = state(14);
     actual_pitchrate = state(13);
     actual_yawrate   = state(15);
     
-    %[] = input_rate_bf_roll_pitch_yaw(desired_rollrate, desired_pitchrate, desired_pitchrate,actual_rollrate,actual_pitchrate,actual_yawrate);
+    %遥控器期望姿态角速率指令转化成期望的姿态角和姿态角对应的四元数
+    input_rate_bf_roll_pitch_yaw(rollrate_stick,pitchrate_stick,yawrate_stick);
+    
+    %根据四元数以及实际姿态角求期望姿态角速率
+    desired_attituderate_rad  = attitude_controller_run_quat(q,actual_roll,actual_pitch,actual_yaw);
+    desired_rollrate_rad      = desired_attituderate_rad(1);
+    desired_pitchrate_rad     = desired_attituderate_rad(2);
+    desired_yawrate_rad       = desired_attituderate_rad(3);
+    
     
     roll_in     = set_roll(desired_rollrate_rad,actual_rollrate);
     pitch_in    = set_pitch(desired_pitchrate_rad,actual_pitchrate);
